@@ -1,0 +1,44 @@
+import nodemailer from 'nodemailer';
+
+const handler = async (req, res) => {
+  if (req.method === 'POST') {
+    const { name, email, subject, message } = req.body;
+
+    // Validate input fields
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ error: 'All fields are required.' });
+    }
+
+    try {
+      // Create a transporter object using Gmail
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER, // Your Gmail address
+          pass: process.env.GMAIL_PASSWORD, // Your Gmail app password
+        },
+      });
+
+      // Email options
+      const mailOptions = {
+        from: `"${name}" <${email}>`, // Sender information
+        to: 'spark.official.my@gmail.com', // Recipient email
+        subject: `New Contact Form Submission - ${subject}`, // Subject line
+        text: `You have a new message from ${name} (${email}):\n\n${message}`, // Plain text body
+      };
+
+      // Send the email
+      await transporter.sendMail(mailOptions);
+
+      return res.status(200).json({ success: true, message: 'Email sent successfully!' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      return res.status(500).json({ error: 'Failed to send the email.' });
+    }
+  } else {
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ error: `Method ${req.method} not allowed.` });
+  }
+};
+
+export default handler;
